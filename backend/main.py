@@ -1,5 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from pathlib import Path
 from routers import odds, mlb, nba, edges, ev, bankroll, clv, sharp, props, public_fade, signals
 
 app = FastAPI(title="EDGE — Value Betting Engine")
@@ -26,14 +29,30 @@ app.include_router(public_fade.router, prefix="/public-fade", tags=["Public Fade
 app.include_router(signals.router, prefix="/signals", tags=["Signals"])
 
 
-@app.get("/")
-def root():
-    return {"status": "EDGE engine running", "version": "2.0"}
-
-
 @app.get("/health")
 def health():
     return {"ok": True}
+
+
+# Serve React frontend — must come AFTER all API routes
+STATIC_DIR = Path(__file__).parent.parent / "frontend" / "dist"
+if STATIC_DIR.exists():
+    app.mount("/assets", StaticFiles(directory=STATIC_DIR / "assets"), name="assets")
+
+    @app.get("/")
+    def serve_index():
+        return FileResponse(STATIC_DIR / "index.html")
+
+    @app.get("/{full_path:path}")
+    def serve_spa(full_path: str):
+        file = STATIC_DIR / full_path
+        if file.exists() and file.is_file():
+            return FileResponse(file)
+        return FileResponse(STATIC_DIR / "index.html")
+else:
+    @app.get("/")
+    def root():
+        return {"status": "EDGE engine running", "version": "2.0"}
 
 
 @app.get("/weather", tags=["Weather"])
