@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: edge-backend
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    rootDir: backend
+    envVars:
+      - key: ODDS_API_KEY
+        sync: false
+    healthCheckPath: /health
+
+  - type: static
+    name: edge-frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    rootDir: frontend
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          name: edge-backend
+          type: web
+          property: host
