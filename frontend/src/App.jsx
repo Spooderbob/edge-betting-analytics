@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+// Same-origin in production (FastAPI serves this build); localhost for local dev.
+const BASE = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? 'http://localhost:8000' : '')
 
 const api = {
   getLiveOdds: (sport) => axios.get(`${BASE}/odds/live/${sport}`),
